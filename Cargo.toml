@@ -33,6 +33,7 @@ flaky_tests = []
 log = "0.4"
 env_logger = "0.6"
 clap = "2.33"
+config = "0.10"
 
 #futures = "0.1"
 #futures-watch = { git = "https://github.com/carllerche/better-future" }
