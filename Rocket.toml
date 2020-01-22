@@ -1,0 +1,10 @@
+[global]
+context-path = "/service"
+application.name = "service"
+application.version="v1"
+
+[development]
+port = 8083
+
+[production]
+port = 8080
