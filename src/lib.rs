@@ -1,37 +1,63 @@
-#[macro_use] extern crate log;
+#![warn(missing_docs)]
+#![feature(proc_macro_hygiene, decl_macro)]
+#![allow(proc_macro_derive_resolution_fallback)]
 
-extern crate config;
-#[macro_use]
-extern crate clap;
-
-use clap::{Arg, App, SubCommand, ArgMatches};
 
 use std::path::Path;
 use std::collections::HashMap;
+use std::sync::atomic::AtomicI32;
+
+#[macro_use] extern crate log;
+
+extern crate rocket_contrib;
+#[macro_use] extern crate rocket;
 
 
+
+use rocket::Rocket;
+use rocket::config::{Environment};
+use rocket::error::{LaunchError};
+extern crate config;
 use config::{File,Config};
 
 
+extern crate clap;
+use clap::{Arg, App, SubCommand, ArgMatches};
+
+extern crate rocket_prometheus;
+use rocket_prometheus::PrometheusMetrics;
+
+/*
+extern crate summer_addons;
+use summer_addons::database;
+*/
 pub mod error;
+pub mod handler; // TODO Move from here
+pub mod external; // TODO Move from here
+
+
+use external::HitCount;
+
 
 
 pub const BASE_PATH: &'static str = "/v1";
 pub const API_VERSION: &'static str = "1.0.0";
 
-pub struct BaseService {
+pub struct BaseService<'a> {
     pub config: Option<Config>,
+    matches: ArgMatches<'a>,
+    pub server: rocket::Rocket,
+    prometheus: Option<PrometheusMetrics>,
 }
 
-impl BaseService {
-    fn setup(&self, matches: ArgMatches) -> Option<bool> {
-
-     // Gets a value for config if supplied by user, or defaults to "default.conf"
-        let config_filename = format!("{}.yml", self.config.as_ref().unwrap().get_str("application.name").unwrap_or("application".to_string()));
-        let config = matches.value_of("config").unwrap_or(&config_filename);
-        debug!("System initializing with config file {}", config);
+impl<'a> BaseService<'a> {
+    fn setup(configuration: &Config, matches: &ArgMatches) -> Rocket {
+         // Gets a value for config if supplied by user, or defaults to "default.conf"
+        let config_filename = format!("{}.yml", configuration.get_str("application.name").unwrap_or("application".to_string()));
+        let config_def_filename = matches.value_of("config").unwrap_or(&config_filename);
+        debug!("Should load and merge a new config file {}", config_def_filename);
         // It must be mutable
-        //self.config.as_ref();.unwrap().merge(File::from(Path::new(config))).unwrap();
+        //configuration.as_ref();.unwrap().merge(File::from(Path::new(config))).unwrap();
         // Calling .unwrap() is safe here because "INPUT" is required (if "INPUT" wasn't
         // required we could have used an 'if let' to conditionally get the value)
     //    println!("Using input file: {}", matches.value_of("input_file").unwrap());
@@ -54,32 +80,69 @@ impl BaseService {
                 debug!("Printing normally...");
             }
         }
-        Some(true)
+
+
+        // Link to the custom config
+        // Basic bootstrap
+        let rocket_config = match rocket::config::Config::build(Environment::Staging)
+    //            .address("1.2.3.4")
+            .port(8080)
+            .finalize() {
+                Ok(config) => config,
+                Err(e) => panic!("Error configuring {}", e),
+            };
+        // Do all internal setup and ignite()
+        Rocket::custom(rocket_config)
     }
 
-    fn configure(filename: &str) -> Option<Config> {
+    fn read_configuration(filename: &str) -> Option<Config> {
         // Gather all conf files from conf/ manually
         let mut settings = Config::default();
 
         settings
-        .merge(File::from(Path::new(filename))).unwrap();
+            .merge(File::from(Path::new(filename))).unwrap();
+
         Some(settings)
+    }
+
+    pub fn launch(self, routes: Vec<rocket::Route>) -> LaunchError {
+        let config = self.config.as_ref().unwrap();
+        self.server
+            .attach(self.prometheus.as_ref().unwrap().clone()) // TODO should be optional
+            .manage(HitCount { count: AtomicI32::new(0) })
+//            .manage(database::init_pool()) // TODO Get it right
+            .mount(
+                &format!("{}/{}",
+                    config.get_str("server.context-path").unwrap_or("/api".to_string()),
+                    config.get_str("application.version").unwrap_or("v1".to_string())),
+                routes,)
+            .mount(&format!("{}/{}/metrics",
+                    config.get_str("server.context-path").unwrap_or("/api".to_string()),
+                    config.get_str("application.version").unwrap_or("v1".to_string())),
+                self.prometheus.unwrap())
+            .launch()
     }
 }
 
-pub trait Service {
-   fn new(matches: ArgMatches) -> Self;
+pub trait Service<'a> {
+   fn new(matches: ArgMatches<'a>) -> Self;
 }
 
 
-impl Service for BaseService {
-    fn new(matches: ArgMatches) -> Self {
+impl<'a> Service<'a> for BaseService<'a> {
+    fn new(matches: ArgMatches<'a>) -> Self {
+        debug!("Initializing server engine");
+        let custom_config = BaseService::read_configuration("application.yml");
+        let rocket = BaseService::setup(&custom_config.as_ref().unwrap(), &matches);
+
+        let prometheus = Some(PrometheusMetrics::new()); // TODO Should be able to disable
 
         let service = BaseService {
-            config: BaseService::configure("application.yml"),
+            config: custom_config,
+            matches: matches,
+            server: rocket,
+            prometheus: prometheus,
         };
-
-        service.setup(matches);
         service
     }
 }

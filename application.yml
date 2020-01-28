@@ -1,6 +1,6 @@
 server:
    port: 8083
-   context-path: /assets
+   context-path: /simple
 application:
-   name: assets
+   name: simple
    version: v1

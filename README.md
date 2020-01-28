@@ -7,4 +7,7 @@ Simple project to build microservices in Rust
 
 ## Introduction
 
+## Run example
+
+> RUST_LOG=debug cargo run --example simple
 

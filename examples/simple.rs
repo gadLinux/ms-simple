@@ -1,23 +1,24 @@
 #![warn(missing_docs)]
 #![feature(decl_macro, proc_macro_hygiene)]
 
+
 #[macro_use] extern crate log;
 extern crate env_logger;
-#[macro_use]
-extern crate clap;
 
+extern crate clap;
+use clap::{Arg, App, SubCommand,ArgMatches};
+
+#[macro_use]
+extern crate rocket;
 
 extern crate rust_summer as summer;
 
-use std::collections::HashMap;
-//use std::error::Error;
-use clap::{Arg, App, SubCommand,ArgMatches};
-
-use summer::error::ConfigError;
 use summer::{BaseService, Service};
+
 
 fn main() {
 
+    // Build command line specs
     let app = App::new("Simple Microservice in rust")
     .version("1.0")
       .author("Gonzalo Aguilar Delgado <gaguilar@level2crm.com>")
@@ -46,26 +47,23 @@ fn main() {
                       .short("d")
                       .help("print debug information verbosely")));
 
+    // Init logging
     env_logger::init();
 
-
+    // Create the service
     let service: BaseService = Service::new(app.get_matches());
     debug!("Application {:?}",
-         service.config.unwrap().get_str("application.name").unwrap_or("Unknown".to_string()));
-    /*
+     service.config.as_ref().unwrap().get_str("application.name").unwrap_or("Unknown".to_string()));
 
-    let config = match Configuration::new(&config_filename) {
-        Ok(config) => println!("Should start test"),
-        //server::router::create_routes(config),
-        Err(ConfigError::NotFound) =>
-            println!("Resource not found"),
-        Err(ConfigError::Io(err)) => {
-                println!("Cannot configure the app, cannot process config file [{}]: {}",config_filename, err);
-                //app.print_help();
-            },
-        Err(ConfigError::Serde(err)) =>
-            println!("Cannot configure the app, cannot parse [{}]: {}",config_filename,err),
-    };
-    */
+    let routes = routes![summer::handler::all,
+/*                    people::handler::get,
+                    people::handler::post,
+                    people::handler::put,
+                    people::handler::delete
+*/
+                    ];
+     service.launch(routes);
+//    service.server.mount(&format!("/{}/{}", "app", "v1"),routes,).launch();
+
 
 }

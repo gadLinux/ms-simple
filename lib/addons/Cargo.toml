@@ -2,7 +2,7 @@
 # Server part of the asset microservice
 #
 [package]
-name = "ms-asset-server"
+name = "summer-addons"
 version = "0.0.1"
 authors = ["Gonzalo Aguilar <gaguilar@level2crm.com>"]
 publish = false
@@ -12,14 +12,32 @@ default = []
 
 [dependencies]
 log = "0.4"
-rocket = "0.4"
-rocket_codegen = "0.4"
+#rocket = "0.4"
+#rocket_codegen = "0.4"
 serde = { version = "1.0", features = ["derive"]}
 serde_json = "1.0"
 serde_yaml = "0.8"
 
-rocket_contrib = { version = "0.4",  default-features = false, features = ["json"] }
+r2d2-diesel = "1.0.0"
+r2d2 = "0.8"
+diesel = { version = "1.4", features = ["mysql"] }
+
+#rocket_contrib = { version = "0.4",  default-features = false, features = ["json"] }
 
 [dev-dependencies]
 #quickcheck = { version = "0.8", default-features = false }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
