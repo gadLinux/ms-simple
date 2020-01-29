@@ -1,5 +1,5 @@
-//use connection::DbConn;
-//use diesel::result::Error;
+
+use diesel::result::Error;
 use std::vec;
 
 use rocket::http::Status;
@@ -7,7 +7,10 @@ use rocket::State;
 use rocket_contrib::json::Json;
 use std::result::Result;
 
-use external::Person;
+extern crate summer_addons;
+
+use summer_addons::person::Person;
+use summer_addons::database::DbConn;
 use external::HitCount;
 use std::sync::atomic::{AtomicI32, Ordering};
 
@@ -35,7 +38,7 @@ pub fn all(hit_count: State<HitCount>) -> Result<Json<Vec<Person>>, Status> {
         id: hit_count.count.load(Ordering::Relaxed),
         first_name: "Gonzalo".to_string(),
         last_name: "Aguilar".to_string(),
-        age: 41
+        //age: 41
     };
     hit_count.count.store(person.id + 1, Ordering::Relaxed);
     let persons = vec![person];
@@ -46,22 +49,25 @@ pub fn all(hit_count: State<HitCount>) -> Result<Json<Vec<Person>>, Status> {
         .map_err(|_error: Status| Status::InternalServerError )
 //        .map_err(|error| error_status(error))
 }
-/*
+
 fn error_status(error: Error) -> Status {
     match error {
         Error::NotFound => Status::NotFound,
-        _ => Status::InternalServerError
+        _ => {
+            debug!("There's other trouble with the operation: {}", error);
+            Status::InternalServerError
+        }
     }
 }
-*/
 
-/*
-#[get("/<id>")]
+
+#[get("/person/<id>")]
 pub fn get(id: i32, connection: DbConn) -> Result<Json<Person>, Status> {
-    people::repository::get(id, &connection)
+    summer_addons::repository::get(id, &connection)
         .map(|person| Json(person))
         .map_err(|error| error_status(error))
 }
+/*
 
 #[post("/", format = "application/json", data = "<person>")]
 pub fn post(person: Json<Person>, connection: DbConn) -> Result<status::Created<Json<Person>>, Status> {

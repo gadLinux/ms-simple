@@ -15,6 +15,7 @@ pub fn init_pool() -> Pool {
 }
 
 fn database_url() -> String {
+    debug!("Checking environment for database connection");
     env::var("DATABASE_URL").expect("DATABASE_URL must be set")
 }
 

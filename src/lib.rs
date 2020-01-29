@@ -27,10 +27,11 @@ use clap::{Arg, App, SubCommand, ArgMatches};
 extern crate rocket_prometheus;
 use rocket_prometheus::PrometheusMetrics;
 
-/*
+#[macro_use] extern crate diesel;
+
 extern crate summer_addons;
 use summer_addons::database;
-*/
+
 pub mod error;
 pub mod handler; // TODO Move from here
 pub mod external; // TODO Move from here
@@ -110,7 +111,7 @@ impl<'a> BaseService<'a> {
         self.server
             .attach(self.prometheus.as_ref().unwrap().clone()) // TODO should be optional
             .manage(HitCount { count: AtomicI32::new(0) })
-//            .manage(database::init_pool()) // TODO Get it right
+            .manage(database::init_pool()) // TODO Get it right
             .mount(
                 &format!("{}/{}",
                     config.get_str("server.context-path").unwrap_or("/api".to_string()),

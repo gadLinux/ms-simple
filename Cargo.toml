@@ -4,7 +4,7 @@
 [workspace]
 members = [
     ".",
-#    "lib/addons",
+    "lib/addons",
 #    "lib/futures-mpsc-lossy",
 #    "lib/hyper-balance",
 #    "lib/server",
@@ -26,7 +26,7 @@ default = ["flaky_tests"]
 flaky_tests = []
 
 [dependencies]
-#summer-addons   = { path = "lib/addons" }
+summer-addons   = { path = "lib/addons" }
 
 #linkerd2-proxy-api = { git = "https://github.com/linkerd/linkerd2-proxy-api", rev = "0d04051e5867c26cb41c7fe3eb9289df6de87428" } #tag = "v0.1.7" }
 
@@ -50,11 +50,17 @@ rocket_codegen = "0.4"
 rocket_contrib = { version = "0.4",  default-features = false, features = ["json"] }
 rocket_prometheus = "0.3.2"
 
+# Remove
+diesel = { version = "1.4", features = ["mysql"] }
+
+
 #[target.'cfg(target_os = "linux")'.dependencies]
 #libc = "0.2"
 #procinfo = "0.4.2"
 
 [dev-dependencies]
+diesel = { version = "1.4", features = ["mysql"] }
+
 #net2 = "0.2"
 #quickcheck = { version = "0.8", default-features = false }
 #ms-asset-server = { path = "./lib/server" } #, features = ["test_util"]
